@@ -5,6 +5,7 @@
 Chandler Nielsen <br>
 Abhiti Mishra <br>
 Jingyuan Yang <br>
+Dili Maduabum <br>
 
 ## Quick Start
 
