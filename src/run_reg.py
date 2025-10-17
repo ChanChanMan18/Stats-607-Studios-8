@@ -1,7 +1,7 @@
 #this file performs different types of regression and returns the estimated coefficients
 import numpy as np
 
-def run_reg(X, y):
+def ridgeless_beta_hat(X, y):
     """
     Run ridgeless regression using manual implementation of least squares formulas.
     
@@ -18,7 +18,7 @@ def run_reg(X, y):
     
     Returns
     -------
-    beta : ndarray of shape (n_features + 1,)
+    beta_hat : ndarray of shape (n_features + 1,)
         Estimated regression coefficients including intercept.
         beta[0] is the intercept, beta[1:] are the feature coefficients.
     
@@ -42,22 +42,19 @@ def run_reg(X, y):
     y = np.asarray(y)
     if X.ndim != 2 or y.ndim != 1:
         raise ValueError("Invalid input shapes")
-
-    # Add intercept
-    X = np.hstack([np.ones((X.shape[0], 1)), X])
     
     
     if p <= n:
         # when p < n: β̂ = (X^T X)^(-1) X^T y
         XTX = X.T @ X
         XTy = X.T @ y
-        beta = np.linalg.solve(XTX, XTy)  # More stable than inv(XTX) @ XTy
+        beta_hat = np.linalg.solve(XTX, XTy)  # More stable than inv(XTX) @ XTy
     else:
         # when p ≥ n: β̂ = X^T (XX^T)^(-1) y  
         XXT = X @ X.T
-        beta = X.T @ np.linalg.solve(XXT, y)  # More stable than X.T @ inv(XXT) @ y
+        beta_hat = X.T @ np.linalg.solve(XXT, y)  # More stable than X.T @ inv(XXT) @ y
     
-    return beta
+    return beta_hat
 
 def calculate_mse(beta_hat, beta_true, gamma, sigma_squared=1, r_squared=5):
     """
@@ -85,7 +82,7 @@ def calculate_mse(beta_hat, beta_true, gamma, sigma_squared=1, r_squared=5):
     - When γ < 1: MSE = σ² * γ/(1-γ)
     - When γ > 1: MSE = r²(1 - 1/γ) + σ² * 1/(γ-1)
     """
-    experimental_mse = (beta_hat - beta_true)**2
+    experimental_mse = np.mean((beta_hat - beta_true)**2)
     
     theoretical_mse = None
     if gamma < 1:

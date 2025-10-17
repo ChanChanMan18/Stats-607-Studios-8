@@ -26,16 +26,15 @@ def sample_errors(n, sigma, rng):
     return err
 
 
-def simulate_dataset(n=200, gamma, seed = None):
-
+def simulate_dataset(gamma, n = 200, seed = None):
     if seed is None:
         rng = np.random.default_rng(82803)
     else:
         rng = np.random.default_rng(seed)
     
-    p = int(round(gamma * n))
+    p = int(np.floor(gamma * n)) #should be the floor
     sigma = 1.0
-    r = 5.0
+    r = math.sqrt(5.0)
     X = sample_X(n, p, rng)
     beta = make_beta(p, r)
     eps = sample_errors(n, sigma, rng=rng)
