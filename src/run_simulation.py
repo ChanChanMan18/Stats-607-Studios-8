@@ -8,6 +8,7 @@ Output CSV format: method, n, p, df, rho, SNR, rep, mse
 """
 
 import numpy as np
+from pathlib import Path
 import pandas as pd
 import pickle
 from tqdm import tqdm
@@ -34,8 +35,11 @@ def run_single_simulation(n, gamma, seed):
     dict
         Dictionary containing experimental and theoretical MSE
     """
+
+    rng = np.random.default_rng(seed)
+
     # Generate data using the provided function
-    data = simulate_dataset(gamma=gamma, n = 200, seed=seed)
+    data = simulate_dataset(gamma=gamma, n = n, seed=seed)
     
     X = data["X"]
     y = data["y"]
@@ -62,7 +66,7 @@ def run_single_simulation(n, gamma, seed):
     }
 
 
-def run_simulation_regime(n, gamma_values, n_sim, regime_name):
+def run_simulation_regime(n, gamma_values, n_sim, regime_name, base_seed = 82803):
     """
     Run all simulations for a specific regime (fixed n, different gamma, multiple replications).
     
@@ -77,19 +81,20 @@ def run_simulation_regime(n, gamma_values, n_sim, regime_name):
     regime_name : str
         Name of the regime (for display)
     """
-    results = []
     print(f"\n{regime_name}: n = {n}, n_sim = {n_sim}, {len(gamma_values)} γ values")
+    results = []
+    rng = np.random.default_rng(base_seed)
 
     for gamma in tqdm(gamma_values, desc="  Running γ values"):
         mse_values = []
         theoretical_mse = None
 
-        for rep in range(n_sim):
-            seed = np.random.randint(0, 1_000_000)
-            result = run_single_simulation(n, gamma, seed)
-            mse_values.append(result["experimental_mse"])
+        for _ in range(n_sim):
+            seed = int(rng.integers(0, 2**31 - 1))
+            out = run_single_simulation(n = n, gamma = gamma, seed = seed)
+            mse_values.append(out["experimental_mse"])
             if theoretical_mse is None:
-                theoretical_mse = result["theoretical_mse"]
+                theoretical_mse = out["theoretical_mse"]
 
         mean_mse = np.mean(mse_values)
         se_mse = 0.0 if n_sim == 1 else np.std(mse_values, ddof=1) / np.sqrt(n_sim)
@@ -98,12 +103,10 @@ def run_simulation_regime(n, gamma_values, n_sim, regime_name):
             "n_sim": n_sim,
             "gamma": gamma,
             "MSE": mean_mse,
-            "se(MSE)": se_mse #,
-            #"theoretical_MSE": theoretical_mse
+            "se(MSE)": se_mse,
+            "theoretical_MSE": theoretical_mse
         })
     return results
-
-
 
 
 def main():
@@ -129,7 +132,6 @@ def main():
     ]
 
     all_results = []
-
     for reg in regimes:
         res = run_simulation_regime(
             n=n,
@@ -140,33 +142,29 @@ def main():
         all_results.extend(res)
 
     df = pd.DataFrame(all_results)
-    df.to_csv("simulation_results.csv", index=False)
-    with open("simulation_results.pkl", "wb") as f:
+
+    try:
+        base_dir = Path(__file__).resolve().parent
+    except NameError:
+        # Fallback: current working directory
+        base_dir = Path.cwd()
+
+    outdir = (base_dir / ".." / "data").resolve()
+    outdir.mkdir(parents=True, exist_ok=True)
+
+    csv_path = outdir / "simulation_results.csv"
+    pkl_path = outdir / "simulation_results.pkl"
+
+    df.to_csv(csv_path, index=False)
+    with open(pkl_path, "wb") as f:
         pickle.dump(df, f)
+
+    print(f"Saved {csv_path}")
+    print(f"Saved {pkl_path}")
+
 
 if __name__ == "__main__":
     main()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
