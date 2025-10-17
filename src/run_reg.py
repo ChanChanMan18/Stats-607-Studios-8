@@ -18,7 +18,7 @@ def ridgeless_beta_hat(X, y):
     
     Returns
     -------
-    beta_hat : ndarray of shape (n_features + 1,)
+    beta_hat : ndarray of shape (n_features )
         Estimated regression coefficients including intercept.
         beta[0] is the intercept, beta[1:] are the feature coefficients.
     
@@ -46,13 +46,10 @@ def ridgeless_beta_hat(X, y):
     
     if p <= n:
         # when p < n: β̂ = (X^T X)^(-1) X^T y
-        XTX = X.T @ X
-        XTy = X.T @ y
-        beta_hat = np.linalg.solve(XTX, XTy)  # More stable than inv(XTX) @ XTy
+        beta_hat = np.linalg.inv(X.T @ X) @ X.T @ y # More stable than inv(XTX) @ XTy
     else:
         # when p ≥ n: β̂ = X^T (XX^T)^(-1) y  
-        XXT = X @ X.T
-        beta_hat = X.T @ np.linalg.solve(XXT, y)  # More stable than X.T @ inv(XXT) @ y
+        beta_hat = X.T @ np.linalg.inv(X @ X.T) @ y  # More stable than X.T @ inv(XXT) @ y
     
     return beta_hat
 
@@ -82,7 +79,7 @@ def calculate_mse(beta_hat, beta_true, gamma, sigma_squared=1, r_squared=5):
     - When γ < 1: MSE = σ² * γ/(1-γ)
     - When γ > 1: MSE = r²(1 - 1/γ) + σ² * 1/(γ-1)
     """
-    experimental_mse = np.mean((beta_hat - beta_true)**2)
+    experimental_mse = sum((beta_hat - beta_true)**2)
     
     theoretical_mse = None
     if gamma < 1:
@@ -90,51 +87,11 @@ def calculate_mse(beta_hat, beta_true, gamma, sigma_squared=1, r_squared=5):
         theoretical_mse = sigma_squared * gamma / (1 - gamma)
     elif gamma > 1:
         # When γ > 1 (underdetermined case)
-        theoretical_mse = r_squared * (1 - 1/gamma) + sigma_squared * 1 / (gamma - 1)
+        theoretical_mse = r_squared * (1 - 1/gamma) + sigma_squared / (gamma - 1)
     else:
         # When γ = 1 (critical case)
         raise ValueError("Gamma = 1 is a critical case where MSE is undefined")
-    
     return experimental_mse, theoretical_mse
 
-
-# from scipy import stats
-# import warnings
-# from sklearn.linear_model import HuberRegressor
-# from sklearn.linear_model import QuantileRegressor
-# from sklearn.linear_model import LinearRegression
-# 
-# def lin_regression(X, y):
-#     """Linear regression using sklearn"""
-# 
-#     if not isinstance(X, (list, np.ndarray)) or not isinstance(y, (list, np.ndarray)):
-#         raise TypeError("Both X and y must be arrays or lists")
-#     # check if X is full rank
-#     if np.linalg.matrix_rank(X) < min(X.shape):
-#         warnings.warn("X is not full rank. Results may be unreliable.", UserWarning)
-# 
-#     model = LinearRegression()
-#     model.fit(X, y)
-#     return model.coef_
-# 
-# def huber_regression(X, y, epsilon=1.35):
-#     """Huber regression using sklearn"""
-# 
-#     if not isinstance(X, (list, np.ndarray)) or not isinstance(y, (list, np.ndarray)):
-#         raise TypeError("Both X and y must be arrays or lists")
-#     
-#     model = HuberRegressor(epsilon=epsilon, max_iter=100000)
-#     model.fit(X, y)
-#     return model.coef_
-# 
-# def quantile_regression(X, y, alpha =0.5):
-#     """Quantile regression using sklearn"""
-# 
-#     if not isinstance(X, (list, np.ndarray)) or not isinstance(y, (list, np.ndarray)):
-#         raise TypeError("Both X and y must be arrays or lists")
-#     
-#     model = QuantileRegressor(quantile=alpha, solver='highs')
-#     model.fit(X, y)
-#     return model.coef_
 
 

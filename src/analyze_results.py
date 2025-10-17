@@ -33,6 +33,7 @@ def produce_figure(df, output_dir):
         gL = np.logspace(np.log10(x_min), np.log10(0.9), 400)
         gR = np.logspace(np.log10(1.1), np.log10(x_max), 400)
         sigma2, r2 = 1.0, 5.0
+
         tL = sigma2 * gL / (1.0 - gL)
         tR = r2 * (1.0 - 1.0 / gR) + sigma2 / (gR - 1.0)
         ax.plot(gL, tL, linewidth=2, color="black", label="Theory")
@@ -57,6 +58,7 @@ def produce_figure(df, output_dir):
         ax.axvline(1.0, linestyle="--", linewidth=1, color="tab:gray")  # vertical asymptote at γ=1
         ax.set_xscale("log")
         ax.set_xlim(x_min, x_max)
+        ax.set_ylim(0, 20)
         ax.set_title(title)
 
     axes[-1].set_xlabel(r"$\gamma = p/n$")
